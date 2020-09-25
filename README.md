@@ -1,0 +1,1 @@
+# afnic_word_trends
