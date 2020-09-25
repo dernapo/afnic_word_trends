@@ -152,13 +152,13 @@ plot_data_growing_dt[sld_word %in% top_words_list] %>%
        subtitle = "<span style='font-size:12pt'>
        <span style='color:#4e4d47'>3 months sliding window
        </span>",
-       caption = "Source: Afnic Open Data Aug 2020") +
+       caption = "Source: Afnic Open Data Aug 2020\nAuthor: @dernapo") +
   scale_colour_brewer(palette = "Set1", direction = -1) +
   facet_wrap(. ~ sld_word, scales = "free_y") +
   theme_words()
 
 
-ggsave(here("output", paste0(format(Sys.time(),"%Y%m%d_%H%M"), "_afnic_trends.png")),
+ggsave(here("output", paste0(format(Sys.time(),"%Y%m%d"), "_afnic_trends.png")),
        height = 8, width = 12)
 
 
