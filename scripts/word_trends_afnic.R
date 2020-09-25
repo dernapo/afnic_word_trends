@@ -143,7 +143,6 @@ plot_data_growing_dt[sld_word %in% top_words_list] %>%
   ggplot(aes(y = percent, x = registration_date, colour = sld_word)) +
   geom_line() +
   scale_x_date(date_labels = "%b '%y") +
-  #geom_smooth(method = "lm", formula = y ~ x, colour = "grey", fill = "#009E73", alpha = .1) +
   labs(x = "", 
        y = "", 
        title = "<span style='font-size:20pt'>
@@ -154,15 +153,12 @@ plot_data_growing_dt[sld_word %in% top_words_list] %>%
        <span style='color:#4e4d47'>3 months sliding window
        </span>",
        caption = "Source: Afnic Open Data Aug 2020") +
-  #       #<span style='color:#009E73'>growing
-  #scale_colour_brewer(palette = "Dark2") +
   scale_colour_brewer(palette = "Set1", direction = -1) +
   facet_wrap(. ~ sld_word, scales = "free_y") +
-  #facet_wrap(. ~ sld_word) +
   theme_words()
 
 
-ggsave(here("output", "graphs", paste0(format(Sys.time(),"%Y%m%d_%H%M"), "_afnic_trends.png")),
+ggsave(here("output", paste0(format(Sys.time(),"%Y%m%d_%H%M"), "_afnic_trends.png")),
        height = 8, width = 12)
 
 
