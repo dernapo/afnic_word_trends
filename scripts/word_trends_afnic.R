@@ -1,11 +1,20 @@
 ############################################################
-## discovering words trends on Afnic domains
+## Discovering words trends on Afnic domains
 ############################################################
 
 ## Load libraries #####
-pacman::p_load(data.table, lubridate, ggplot2, dplyr, wordsplitter, here,
-               ggtext, broom, future, future.apply)
+pacman::p_load(data.table, 
+               lubridate, 
+               ggplot2, 
+               dplyr, 
+               wordsplitter, ## This is my own library, not in CRAN!!
+               here,
+               ggtext, 
+               broom, 
+               future, 
+               future.apply)
 
+## Load graph theme ####
 theme_words <- function(...) {
   theme_minimal() +
     theme(
@@ -27,9 +36,10 @@ theme_words <- function(...) {
 plan("sequential")
 
 ## Load data #####
+if(!exists("afnic_dt")) {
+  source(here( "scripts", "read_afnic.R"))
+}
 
-# Afnic data
-source(here( "scripts", "read_afnic.R"))
 
 # Stop words
 stop_words_list <- unlist(lapply(c("en", "fr"), stopwords::stopwords))
@@ -74,8 +84,6 @@ domain_date_dt[, domain_sld := sub(x = domain_name,
                                    replacement = "\\1")]
 
 
-#domain_date_dt[, domain_name := NULL]
-
 # Split sld
 domain_date_prep_dt <- splitnames_function(domain_date_dt)
 
@@ -88,7 +96,7 @@ domain_date_prep_dt[sld_word == "covi", sld_word := "covid"]
 domain_date_prep_dt[sld_word == "covid", sld_word := "covid19"]
 
 
-## Outliers
+## Remove Outliers
 to_remove <- c("plombier", "artisan", # due to many registrations of "artisans-plombier-....fr"
                "goodies", # many domains registered with the same company OVH
                "dec", # protective domain registrations "A-dec"
@@ -96,7 +104,7 @@ to_remove <- c("plombier", "artisan", # due to many registrations of "artisans-p
 domain_date_prep_dt <- domain_date_prep_dt[!sld_word %in% to_remove]
 
 fwrite(domain_date_prep_dt, here("output", paste0(format(Sys.time(), "%Y%M%d_%H%M"), "_afnic_data_trends_prep.csv")))
-### daily aggregates ####
+## Daily aggregates
 aggregate_day_dt <- domain_date_prep_dt[, .(word_registration_date = .N), .(sld_word, registration_date, month_date)] ## add searches per day and market
 
 aggregate_day_dt[, total_daily_registrations := .N, .(registration_date)] ## add week counts
@@ -108,20 +116,14 @@ aggregate_day_dt[, total_word_counts := .N, .(sld_word)]
 aggregate_day_dt <- unique(aggregate_day_dt)
 aggregate_day_dt <- aggregate_day_dt[total_word_counts > 80] #Threshold, min. #domains registered for a given word
 
-
-## Calculate linear regression slopes
-#result_daily_lm_dt <- aggregate_day_dt[month_date %between% c("2020-01-01", "2020-03-01"), as.list(tidy(lm(percent ~ year))), .(sld_word)]
-
-# Calculate linear regression slops of 3 months sliding windows
+## Calculate linear regression slops of 3 months sliding windows
 start_month_list <- seq(as.Date("2019-01-01"), as.Date("2020-05-01"), by = "month")
-
 
 result_daily_lm_dt_list <- future_lapply(start_month_list, function(start_month) {
   start_month <- as.Date(start_month, "%Y%m%d")
   end_month <- start_month
   month(end_month) <- month(start_month) + 3
   aggregate_day_dt[month_date %between% c(start_month, end_month), as.list(tidy(lm(percent ~ year))), .(sld_word)]
-  
   
 })
 
